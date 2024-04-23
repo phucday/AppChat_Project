@@ -1,8 +1,9 @@
-TVShow app
-Language: java
-Technology used: Room, MVVM Architecture, Retrofit, Rxjava, Livedata, DataBinding 
+link demo : https://drive.google.com/file/d/1Wqp7scn-FjVUVrL5Ui1ftZzf_sr3OFeN/view?usp=sharing
 
-Feature: 
-- watch detail tvshow(date, description,..), esipode with season, web of tvShow
-- Search tvshow by name and add to favourite watchlist
-- detail favorite tvshow(can add, delete)
+Chat App
+
+Language: java
+
+Technology used: Android Studio, FireBase, SharePreference, Retrofit, libary image.
+
+
