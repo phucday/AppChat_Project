@@ -8,6 +8,7 @@ import android.graphics.BitmapFactory;
 import android.media.metrics.Event;
 import android.os.Bundle;
 import android.util.Base64;
+import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
@@ -53,7 +54,7 @@ public class ChatActivity extends BaseActivity {
     private ChatAdapter chatAdapter;
     private PreferenceManager preferenceManager;
     private FirebaseFirestore database;
-    String codeImage = "";
+    String codeImage ;
     private String conversionId =null;
     private Boolean isReceiverAvailable = false;
     @Override
@@ -61,9 +62,9 @@ public class ChatActivity extends BaseActivity {
         super.onCreate(savedInstanceState);
         binding = ActivityChatBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+        loadReceiverDetail();
         init();
         setListener();
-        loadReceiverDetail();
         listenMessage();
 
     }
@@ -73,7 +74,7 @@ public class ChatActivity extends BaseActivity {
         chatMessages = new ArrayList<>();
         chatAdapter = new ChatAdapter(
                 chatMessages,
-                 getBitMapFromEncodeString(codeImage),
+                codeImage,
                 preferenceManager.getString(Constants.KEY_USER_ID));
         binding.chatRecyclerView.setAdapter(chatAdapter);
         database = FirebaseFirestore.getInstance();
@@ -118,7 +119,7 @@ public class ChatActivity extends BaseActivity {
 
                 sendNotification(body.toString());
             }catch(Exception exception){
-                showToast(exception.getMessage());
+                showToast(exception.getLocalizedMessage());
             }
         }
         binding.inputMessage.setText(null);
@@ -151,14 +152,15 @@ public class ChatActivity extends BaseActivity {
                     }
                     showToast("Notification sent successfully");
                 }else{
-                    showToast("Error: "+ response.code());
+//                    showToast("Error: "+ response.message());
+
                 }
 
             }
 
             @Override
             public void onFailure(@NonNull Call<String> call,@NonNull Throwable t) {
-                showToast(t.getMessage() );
+                showToast(t.getMessage());
             }
         });
     }
@@ -179,7 +181,7 @@ public class ChatActivity extends BaseActivity {
                 receiverUser.token = value.getString(Constants.KEY_FCM_TOKEN);
                 if(receiverUser.image == null){
                     receiverUser.image = value.getString(Constants.KEY_IMAGE);
-                    chatAdapter.serRecerverProfileImage(getBitMapFromEncodeString(receiverUser.image));
+                    chatAdapter.serRecerverProfileImage(receiverUser.image);
                     chatAdapter.notifyItemRangeChanged(0,chatMessages.size());
                 }
             }
@@ -247,6 +249,7 @@ public class ChatActivity extends BaseActivity {
         receiverUser = (User) getIntent().getSerializableExtra(Constants.KEY_USER);
         binding.textName.setText(receiverUser.name);
         codeImage = receiverUser.image;
+        Log.d("loadReceiverDetail",codeImage);
     }
     private void setListener(){
         binding.imageBack.setOnClickListener(view -> onBackPressed());

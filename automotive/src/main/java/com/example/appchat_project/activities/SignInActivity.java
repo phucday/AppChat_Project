@@ -12,6 +12,8 @@ import android.widget.Toast;
 import com.example.appchat_project.databinding.ActivitySignInBinding;
 import com.example.appchat_project.utilities.Constants;
 import com.example.appchat_project.utilities.PreferenceManager;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
@@ -21,6 +23,7 @@ public class SignInActivity extends AppCompatActivity {
 
     private ActivitySignInBinding binding;
     private PreferenceManager preferenceManager;
+    private FirebaseAuth mAuth;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -28,6 +31,7 @@ public class SignInActivity extends AppCompatActivity {
         setContentView(binding.getRoot());
 
         preferenceManager = new PreferenceManager(getApplicationContext());
+        mAuth = FirebaseAuth.getInstance();
         if(preferenceManager.getBoolean(Constants.KEY_IS_SIGNED_IN)){
             Intent intent = new Intent(getApplicationContext(), MainActivity.class);
             startActivity(intent);
@@ -42,25 +46,34 @@ public class SignInActivity extends AppCompatActivity {
                 startActivity(new Intent(getApplicationContext(),SignUpActivity.class)));
         binding.buttonSignIn.setOnClickListener(view -> {
             if(isValidSingInDetail()){
-                SignIn();
+                authenSignIn(binding.inputEmail.getText().toString(),binding.inputPassword.getText().toString());
             }
         });
-
+        binding.tvForgotPw.setOnClickListener(v -> startActivity(new Intent(SignInActivity.this, ResetPasswordActivity.class)));
     }
-
-    private void SignIn(){
+    private void authenSignIn(String email, String password){
+        mAuth.signInWithEmailAndPassword(email,password)
+                .addOnCompleteListener(this,task -> {
+                    if(task.isSuccessful()){
+                        FirebaseUser user = mAuth.getCurrentUser();
+                        if(user != null){
+                            SignIn(user.getUid());
+                        }
+                    }else {
+                        Toast.makeText(SignInActivity.this, "Authentication failed.", Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+    private void SignIn(String uid){
         loading(true);
         FirebaseFirestore database = FirebaseFirestore.getInstance();
-        database.collection(Constants.KEY_COLLECTION_USERS)
-                .whereEqualTo(Constants.KEY_PASSWORD,binding.inputPassword.getText().toString())
-                .whereEqualTo(Constants.KEY_EMAIL,binding.inputEmail.getText().toString())
+        database.collection(Constants.KEY_COLLECTION_USERS).document(uid)
                 .get()
                 .addOnCompleteListener(task -> {
-                    if(task.isSuccessful() && task.getResult() != null
-                     && task.getResult().getDocuments().size() > 0){
-                        DocumentSnapshot documentSnapshot = task.getResult().getDocuments().get(0);
+                    if(task.isSuccessful()){
+                        DocumentSnapshot documentSnapshot = task.getResult();
                         preferenceManager.putBoolean(Constants.KEY_IS_SIGNED_IN, true);
-                        preferenceManager.putString(Constants.KEY_USER_ID ,documentSnapshot.getId());
+                        preferenceManager.putString(Constants.KEY_USER_ID ,uid);
                         preferenceManager.putString(Constants.KEY_NAME, documentSnapshot.getString(Constants.KEY_NAME));
                         preferenceManager.putString(Constants.KEY_IMAGE, documentSnapshot.getString(Constants.KEY_IMAGE) );
                         Intent intent = new Intent(getApplicationContext(), MainActivity.class);
@@ -72,6 +85,7 @@ public class SignInActivity extends AppCompatActivity {
                     }
                 });
     }
+
 
     private void loading(Boolean isLoading){
         if(isLoading){

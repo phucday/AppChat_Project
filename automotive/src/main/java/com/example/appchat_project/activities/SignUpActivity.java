@@ -19,6 +19,8 @@ import com.example.appchat_project.R;
 import com.example.appchat_project.databinding.ActivitySignUpBinding;
 import com.example.appchat_project.utilities.Constants;
 import com.example.appchat_project.utilities.PreferenceManager;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.io.ByteArrayOutputStream;
@@ -32,6 +34,7 @@ public class SignUpActivity extends AppCompatActivity {
     ActivitySignUpBinding binding;
     private String encodeImage;
     private PreferenceManager preferenceManager;
+    private FirebaseAuth mAuth;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,6 +42,7 @@ public class SignUpActivity extends AppCompatActivity {
         binding = ActivitySignUpBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
         preferenceManager = new PreferenceManager(getApplicationContext());
+        mAuth = FirebaseAuth.getInstance();
         setListeners();
     }
 
@@ -46,7 +50,7 @@ public class SignUpActivity extends AppCompatActivity {
         binding.textSignIn.setOnClickListener(v -> onBackPressed());
         binding.buttonSignUp.setOnClickListener(view -> {
             if(isValidSignUpDetails()){
-                signUp();
+                authenSignUp(binding.inputEmail.getText().toString(),binding.inputPassword.getText().toString());
             }
         });
         binding.layoutImage.setOnClickListener(view -> {
@@ -60,7 +64,7 @@ public class SignUpActivity extends AppCompatActivity {
         Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT).show();
     }
 
-    private void signUp() {
+    private void signUp(String uid) {
         loading(true);
         FirebaseFirestore database = FirebaseFirestore.getInstance();
         HashMap<String,Object> user = new HashMap<>();
@@ -68,12 +72,12 @@ public class SignUpActivity extends AppCompatActivity {
         user.put(Constants.KEY_PASSWORD,binding.inputPassword.getText().toString());
         user.put(Constants.KEY_EMAIL,binding.inputEmail.getText().toString());
         user.put(Constants.KEY_IMAGE,encodeImage);
-        database.collection(Constants.KEY_COLLECTION_USERS)
-                .add(user)
+        database.collection(Constants.KEY_COLLECTION_USERS).document(uid)
+                .set(user)
                 .addOnSuccessListener(documentReference -> {
                     loading(false);
                     preferenceManager.putBoolean(Constants.KEY_IS_SIGNED_IN,true);
-                    preferenceManager.putString(Constants.KEY_USER_ID,documentReference.getId());
+                    preferenceManager.putString(Constants.KEY_USER_ID,uid);
                     preferenceManager.putString(Constants.KEY_NAME,binding.inputName.getText().toString());
                     preferenceManager.putString(Constants.KEY_IMAGE,encodeImage);
                     Intent intent = new Intent(getApplicationContext(), MainActivity.class);
@@ -86,6 +90,19 @@ public class SignUpActivity extends AppCompatActivity {
                 });
     }
 
+    private void authenSignUp(String email, String password){
+        mAuth.createUserWithEmailAndPassword(email,password)
+                .addOnCompleteListener(this,task -> {
+                    if(task.isSuccessful()){
+                        FirebaseUser user = mAuth.getCurrentUser();
+                        if(user != null){
+                            signUp(user.getUid());
+                        }
+                    }else {
+                        Toast.makeText(SignUpActivity.this, "Registration failed.", Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
     private String encodeImage(Bitmap bitmap){
 
         int previewWidth = 150;

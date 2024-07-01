@@ -1,6 +1,9 @@
 package com.example.appchat_project.adapter;
 
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.util.Base64;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 
@@ -15,15 +18,15 @@ import java.util.List;
 
 public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>{
     private final List<ChatMessage> chatMessages;
-    private  Bitmap receiverProfileImage;
+    private  String receiverProfileImage ;
     private final String senderId;
     private static final int VIEW_TYPE_SENT = 1;
     private static final int VIEW_TYPE_RECEIVED = 2;
-    public void serRecerverProfileImage(Bitmap bitmap){
+    public void serRecerverProfileImage(String bitmap){
         receiverProfileImage = bitmap;
     }
 
-    public ChatAdapter(List<ChatMessage> chatMessages, Bitmap receiverProfileImage, String senderId) {
+    public ChatAdapter(List<ChatMessage> chatMessages, String receiverProfileImage, String senderId) {
         this.chatMessages = chatMessages;
         this.receiverProfileImage = receiverProfileImage;
         this.senderId = senderId;
@@ -51,6 +54,7 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>{
             ((SentMessageViewHolder) holder).setData(chatMessages.get(position));
         }else {
             ((ReceivedMessageViewHolder) holder).setData(chatMessages.get(position),receiverProfileImage);
+            Log.d("onBindViewHolderReceivedMessageViewHolder",receiverProfileImage);
         }
     }
 
@@ -72,7 +76,7 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>{
         private final ItemContainerSentMessageBinding binding;
         SentMessageViewHolder(ItemContainerSentMessageBinding itemContainerSentMessageBinding){
             super(itemContainerSentMessageBinding.getRoot());
-            binding = itemContainerSentMessageBinding;
+            this.binding = itemContainerSentMessageBinding;
         }
 
         void setData(ChatMessage chatMessage){
@@ -84,14 +88,26 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>{
         private final ItemContainerReceivedMessageBinding binding;
         ReceivedMessageViewHolder(ItemContainerReceivedMessageBinding itemContainerReceivedMessageBinding){
             super(itemContainerReceivedMessageBinding.getRoot());
-            binding = itemContainerReceivedMessageBinding;
+            this.binding = itemContainerReceivedMessageBinding;
         }
-        void setData(ChatMessage chatMessage, Bitmap receiverProfileImage){
+        void setData(ChatMessage chatMessage, String receiverProfileImage){
             binding.textMessage.setText(chatMessage.message);
             binding.textDateTime.setText(chatMessage.dateTime);
             if(receiverProfileImage != null){
-                binding.imageProfile.setImageBitmap(receiverProfileImage);
+                binding.imageProfile.setImageBitmap(getBitMapFromEncodeString(receiverProfileImage));
+            }else {
+                Log.d("not receiverProfileImage","updated");
             }
+
+        }
+        private Bitmap getBitMapFromEncodeString(String encodeImage){
+            if(encodeImage != null){
+                byte[] bytes = Base64.decode(encodeImage, Base64.DEFAULT);
+                return BitmapFactory.decodeByteArray(bytes,0,bytes.length);
+            }else {
+                return null;
+            }
+
         }
     }
 }
