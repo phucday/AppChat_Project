@@ -7,5 +7,7 @@ Language: java
 Technology used: Android Studio, FireBase, SharePreference, Retrofit, libary image.
 
 Feature:
-- login/logout/register and forgot password using Firebase.
-- storage user'infor, chat and recent conversation with Firebase database
+- Login/Logout/Register and Forgot Password using FirebaseAuthentic.
+- Store user information, chat logs, and recent messages on Firebase.
+- Feature to check if a friend is online.(with SharePreference)
+- Use Retrofit to send messages (FCM).
